@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+
+data/incoming/*.csv
+data/incoming/*.xlsx
+data/incoming/*.xls
+
+reports/*.csv
+reports/*.xlsx
+reports/*.pdf
+reports/*.zip
+
+.streamlit/secrets.toml
+Thumbs.db
+.DS_Store
