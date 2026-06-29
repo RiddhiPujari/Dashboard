@@ -96,3 +96,28 @@ The script uses the newest file in `data/incoming`, finds its latest study date,
 ```
 
 Keep that terminal open. Windows Task Scheduler is normally preferable because it starts automatically at the scheduled time.
+
+
+## Automatic data refresh (no dashboard upload needed)
+
+The dashboard reads the newest `.xlsx`, `.xls`, or `.csv` file from:
+
+```text
+data/incoming/
+```
+
+To update the dashboard, replace or save the latest prediction log in that folder. You do **not** upload it in the dashboard. The browser dashboard checks the folder every 60 seconds and reloads the file when its saved/modified time changes.
+
+Recommended routine:
+
+1. Save the incoming file as `data/incoming/latest_prediction_log.xlsx`.
+2. Each day, replace that file with the refreshed log (or overwrite and save it).
+3. Keep the Streamlit dashboard running. Within about one minute, the KPIs, filters, charts, and management-download files will use the new data.
+
+The app ignores Excel lock files that begin with `~$`.
+
+After downloading this version, install the additional refresh package once:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```

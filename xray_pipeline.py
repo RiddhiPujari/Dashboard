@@ -496,7 +496,12 @@ def write_daily_report(data: pd.DataFrame, quality: dict[str, Any], output_dir: 
 def find_latest_input(input_dir: str | Path) -> Path:
     """Return the newest CSV/XLS/XLSX log in the incoming-data folder."""
     folder = Path(input_dir)
-    candidates = [path for path in folder.glob("*") if path.suffix.lower() in {".csv", ".xlsx", ".xls"}]
+    candidates = [
+        path
+        for path in folder.glob("*")
+        if path.suffix.lower() in {".csv", ".xlsx", ".xls"}
+        and not path.name.startswith("~$")  # Ignore Excel temporary lock files.
+    ]
     if not candidates:
         raise FileNotFoundError(f"No .csv, .xlsx or .xls prediction log found in {folder.resolve()}")
     return max(candidates, key=lambda path: path.stat().st_mtime)

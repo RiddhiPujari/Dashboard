@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-import io
 
 import plotly.express as px
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 from xray_pipeline import (
     clean_and_validate,
@@ -29,13 +29,14 @@ DEFAULT_INPUT_DIR = ROOT / "data" / "incoming"
 
 
 @st.cache_data(show_spinner=False)
-def load_from_bytes(file_bytes: bytes, file_name: str):
-    raw = read_prediction_file(io.BytesIO(file_bytes), file_name)
-    return clean_and_validate(raw)
+def load_from_path(path_string: str, modified_time_ns: int):
+    """Load the local Excel/CSV file.
 
-
-@st.cache_data(show_spinner=False)
-def load_from_path(path_string: str):
+    ``modified_time_ns`` is deliberately a parameter: when the source file is
+    overwritten or saved again, its modification time changes and Streamlit
+    refreshes this cached result on the next automatic rerun.
+    """
+    del modified_time_ns  # Used as a cache key; the path supplies the file itself.
     path = Path(path_string)
     raw = read_prediction_file(path, path.name)
     return clean_and_validate(raw)
@@ -53,28 +54,33 @@ def selected_or_all(values: list[str], label: str) -> str:
     return f"{len(values)} selected {label}"
 
 
+# Rerun the dashboard every 60 seconds while the browser tab is open.
+# This makes the dashboard pick up a newly saved or replaced prediction log
+# without any file upload or manual page refresh.
+st_autorefresh(interval=60_000, key="xray_local_data_refresh")
+
 st.title("X-ray Operations Dashboard")
 
-with st.sidebar:
-    st.header("Load prediction log")
-    uploaded_file = st.file_uploader("Upload CSV or Excel prediction log", type=["csv", "xlsx", "xls"])
-
-    use_local_file = False
-    latest_local_file = None
-    try:
-        latest_local_file = find_latest_input(DEFAULT_INPUT_DIR)
-        use_local_file = st.checkbox(f"Use latest local file: {latest_local_file.name}", value=uploaded_file is None)
-    except FileNotFoundError:
-        pass
-
-if uploaded_file is not None:
-    result = load_from_bytes(uploaded_file.getvalue(), uploaded_file.name)
-    source_label = uploaded_file.name
-elif use_local_file and latest_local_file is not None:
-    result = load_from_path(str(latest_local_file))
-    source_label = latest_local_file.name
-else:
+try:
+    latest_local_file = find_latest_input(DEFAULT_INPUT_DIR)
+except FileNotFoundError:
+    st.error("No prediction log was found in data/incoming. Add or replace an Excel/CSV file in that folder.")
     st.stop()
+
+try:
+    result = load_from_path(
+        str(latest_local_file),
+        latest_local_file.stat().st_mtime_ns,
+    )
+except Exception as error:
+    st.error(f"The latest prediction log could not be read: {error}")
+    st.stop()
+
+source_label = latest_local_file.name
+
+with st.sidebar:
+    st.caption(f"Data file: {source_label}")
+    st.caption("Checks for updated data every 60 seconds.")
 
 if result.missing_required:
     st.error("The uploaded file is missing required column(s): " + ", ".join(result.missing_required))
