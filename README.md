@@ -15,7 +15,7 @@ A working Streamlit dashboard for incoming X-ray AI prediction logs. It updates 
 
 ## Features
 
-- Upload CSV, XLSX, or XLS prediction logs.
+- Automatically loads the latest CSV, XLSX, or XLS prediction log from the data/incoming folder. No dashboard upload is required.
 - Clinic, customer/image-name, date range, image category, and Normal/Abnormal filters.
 - KPI cards: total X-rays, Normal, Abnormal, abnormality percentage, clinics processed.
 - Normal vs Abnormal chart, daily trend, disease distribution, image category distribution, clinic-wise volume.
